@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+#
+# Usage: lspd <prog.lspb> [mode]
+# Decompiles the program to stdout
+# mode is:
+#   disasm (default)  show disassembled output
+#   serial            convert the bytecode to the "serial format"
+
+from sys import argv
+
+infile = open(argv[1] if len(argv) > 1 else "/dev/stdin", "rb")
+prog = infile.read()
+
+mode = "disasm"
+if len(argv) > 2 and argv[2] in ("serial"):
+    mode = argv[2]
+
+i = 0
+
+reg_map  = ["A", "B", "C", "D"]
+oreg_map = ["R", "G", "B", "?"]
+
+def ru8():
+    global i
+    b = prog[i]
+    i += 1
+    return b
+
+def rs8():
+    b = ru8()
+    return b if b < 128 else b - 256
+
+def ru16():
+    global i
+    b = prog[i] + (prog[i + 1] << 8)
+    i += 2
+    return b
+
+def rs16():
+    b = ru16()
+    return b if b < 32768 else b - 65536
+
+
+def ru(isword):
+    if isword:
+        return ru16()
+    return ru8()
+
+def rs(isword):
+    if isword:
+        return rs16()
+    return rs8()
+
+
+dump = []  # (addr, bytecode, dumped)
+jdst = {}  # addr: label
+
+
+while i < len(prog):
+    i_start = i
+    
+    opcode = prog[i]
+    i += 1
+    
+    isword = opcode >> 7
+    reg    = (opcode >> 4) & 3
+    op     = opcode & 0x0f
+    
+    suf = "w" if isword else "b"
+
+    asm = ""
+    
+    if op == 0b0000:
+        asm = "hlt"
+    
+    elif op == 0b0001:
+        asm = f"sr{suf} %{reg_map[reg]}, {ru(isword)}"
+    
+    elif op == 0b0010:
+        asm = f"so{suf} @{oreg_map[reg]}, {ru(isword)}"
+    
+    elif op == 0b0011:
+        asm = f"mo{suf} @{oreg_map[reg]}, {rs(isword)}"
+    
+    elif op == 0b0100:
+        asm = "cmt"
+    
+    elif op == 0b0101:
+        asm = "wt"
+    
+    elif op == 0b0110:
+        off = rs(isword)
+        addr = i + off
+        
+        if addr not in jdst:
+            jdst[addr] = f"drjnz_{i_start:04x}"
+        
+        asm = f"drjnz{suf} %{reg_map[reg]}, {off}  # {jdst[addr]}"
+    
+    elif op == 0b0111:
+        off = rs8()
+        addr = i + off
+        
+        if addr not in jdst:
+            jdst[addr] = f"j_{i_start:04x}"
+        
+        asm = f"j {off}  # {jdst[addr]}"
+    
+    elif op == 0b1000:
+        addr = ru(isword)
+        
+        if addr not in jdst:
+            jdst[addr] = f"ja_{i_start:04x}"
+        
+        asm = f"ja{suf} 0x{addr:04x}  # {jdst[addr]}"
+    
+    elif op == 0b1001:
+        asm = f"ivec {reg}"
+    
+    elif op == 0b1010:
+        addr = ru(isword)
+        
+        if addr not in jdst:
+            jdst[addr] = f"isetpc_{i_start:04x}"
+        
+        asm = f"isetpc{suf} 0x{addr:04x}  # {jdst[addr]}"
+    
+    elif op == 0b1011:
+        asm = f"iret"
+    
+    else:
+        asm = f"? {hex(opcode)}"
+    
+    dump.append((i_start, prog[i_start:i], asm))
+
+
+if mode == "disasm":
+    for addr, bytecode, asm in dump:
+        bytecode = " ".join([f"{b:02x}" for b in bytecode])
+        if addr in jdst:
+            print(f"<{jdst[addr]}>")
+        print(f"{addr:04x}:   {bytecode:<8s}   {asm}")
+
+elif mode == "serial":
+    wbcode = []
+    for _, bytecode, _ in dump:
+        wbcode.append("".join([f"w{b}" for b in bytecode]))
+    print(" ".join(wbcode))

@@ -1,0 +1,55 @@
+apply plugin: 'com.android.application'
+
+buildscript {
+    repositories {
+        jcenter()
+        google()
+    }
+    
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.6.2'
+    }
+}
+
+repositories {
+    jcenter()
+    google()
+}
+
+
+tasks.withType(JavaCompile) {
+    options.deprecation = true
+}
+
+
+android {
+    compileSdkVersion 28
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        minSdkVersion 18
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        applicationId="com.fabiomeneh.lsp"
+    }
+    
+    dexOptions.javaMaxHeapSize "2g"
+
+    lintOptions.abortOnError false
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['java']
+            res.srcDirs = ['res']
+        }
+    }
+}
+
+dependencies {
+}

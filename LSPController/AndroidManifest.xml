@@ -1,0 +1,34 @@
+<?xml version='1.0'?>
+<manifest
+  xmlns:android='http://schemas.android.com/apk/res/android'
+  package='com.fabiomeneh.lsp'>
+
+    <uses-permission
+      android:name="android.permission.INTERNET" />
+    
+    <application
+      android:label='LSPController'
+      android:theme='@style/Theme.Main'
+      android:icon='@drawable/launcher'
+      android:allowBackup="false"
+      android:networkSecurityConfig='@xml/netsec_cfg' >
+        
+        <activity
+          android:name='com.fabiomeneh.lsp.MainActivity'
+          android:label='LSPController'
+          android:icon='@drawable/launcher'
+          android:configChanges='keyboardHidden|orientation|screenSize' >
+            
+            <intent-filter>
+                <category
+                  android:name='android.intent.category.LAUNCHER' />
+                  
+                <action
+                  android:name='android.intent.action.MAIN' />
+            </intent-filter>
+        
+        </activity>
+    
+    </application>
+
+</manifest>

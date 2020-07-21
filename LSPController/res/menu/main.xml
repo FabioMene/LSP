@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <item android:id="@+id/m_add_interrupt"
+          android:icon="@android:drawable/ic_input_add"
+          android:title="Add interrupt" />
+    
+    <item android:id="@+id/m_remove_interrupt"
+          android:icon="@android:drawable/ic_input_delete"
+          android:title="Remove interrupt" />
+    
+    <item android:id="@+id/m_load_program"
+          android:icon="@android:drawable/ic_menu_upload"
+          android:title="Load/Reset program" />
+
+</menu>

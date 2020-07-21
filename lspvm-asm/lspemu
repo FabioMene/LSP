@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+
+from sys import argv
+argc = len(argv)
+
+from os import SEEK_SET, SEEK_CUR
+import time
+
+if argc < 2:
+    print("Usage: lspemu [OPTIONS] <pgm.lspb>")
+    print("Emulates the LSP board")
+    exit(1)
+
+progfp = open(argv[1], "rb")
+
+reg_map  = ["A", "B", "C", "D"]
+oreg_map = ["R", "G", "B", "?"]
+
+regs = [0, 0, 0, 0]
+outs = [0, 0, 0, 0]
+
+pwm_outs = [0, 0, 0, 0]
+
+def pread(l):
+    try:
+        data = progfp.read(l)
+    except:
+        print("Error reading file")
+        exit(1)
+    if len(data) != l:
+        print("Error: truncated program")
+        exit(1)
+    return data
+
+def ru8():
+    b = pread(1)
+    return b[0]
+
+def rs8():
+    b = ru8()
+    return b if b < 128 else b - 256
+
+def ru16():
+    data = pread(2)
+    b = data[0] + (data[1] << 8)
+    return b
+
+def rs16():
+    b = ru16()
+    return b if b < 32768 else b - 65536
+
+
+def ru(isword):
+    if isword:
+        return ru16()
+    return ru8()
+
+def rs(isword):
+    if isword:
+        return rs16()
+    return rs8()
+
+run = True
+
+skip_n = 250
+skip = 0
+
+while run:
+    opcode = pread(1)[0]
+    
+    isword = opcode >> 7
+    reg    = (opcode >> 4) & 3
+    op     = opcode & 0x0f
+    
+    asm = ""
+    suf = "w" if isword else "b"
+    
+    if op == 0b0000:
+        run = False
+        asm = "hlt"
+    
+    elif op == 0b0001:
+        val = ru(isword)
+        regs[reg] = val
+        asm = f"sr{suf} %{reg_map[reg]}, {val}"
+    
+    elif op == 0b0010:
+        val = ru(isword)
+        outs[reg] = val
+        if not isword:
+            outs[reg] <<= 8
+        asm = f"so{suf} @{oreg_map[reg]}, {val}"
+    
+    elif op == 0b0011:
+        val = rs(isword)
+        outs[reg] += val
+        asm = f"mo{suf} @{oreg_map[reg]}, {val}"
+    
+    elif op == 0b0100:
+        pwm_outs = list(outs)
+        asm = "cmt"
+    
+    elif op == 0b0101:
+        asm = "wt"
+    
+    elif op == 0b0110:
+        off = rs(isword)
+        
+        regs[reg] -= 1
+        if regs[reg]:
+            progfp.seek(off, SEEK_CUR)
+        
+        asm = f"drjnz{suf} %{reg_map[reg]}, {off}"
+    
+    elif op == 0b0111:
+        off = rs8()
+        progfp.seek(off, SEEK_CUR)
+        
+        asm = f"j {off}"
+    
+    elif op == 0b1000:
+        addr = ru(isword)
+        progrp.seek(addr, SEEK_SET)
+        
+        asm = f"ja{suf} 0x{addr:04x}"
+    
+    elif op == 0b1001:
+        asm = f"ivec {reg}"
+    
+    elif op == 0b1010:
+        addr = ru(isword)
+        
+        asm = f"isetpc 0x{addr:04x}"
+    
+    elif op == 0b1011:
+        asm = f"iret"
+    
+    else:
+        asm = f"? {hex(opcode)}"
+    
+    for lst in [regs, outs, pwm_outs]:
+        for i in range(len(lst)):
+            v = lst[i] & 0x1ffff  # al max c'è quel bit extra
+            if v > 0xffff:
+                v = (v & 0xffff) + (v >> 8)
+                lst[i] = i
+    
+    scr =  "\x1b[H\x1b[J" +\
+          f"{progfp.tell():04x}: {asm}\n" +\
+           "\n" +\
+           "Regs: " + ", ".join(f"{n}: {v}" for n, v in zip(reg_map, regs)) + "\n" +\
+           "Outs: " + ", ".join(f"{n}: {v}" for n, v in zip(oreg_map, outs)) + "\n" +\
+           "PWM:  " + ", ".join(f"{n}: {v}" for n, v in zip(oreg_map, pwm_outs)) + "\n"
+    
+    if not skip:
+        print(scr)
+        skip = skip_n
+    skip -= 1
+
+    time.sleep(0.001)
+

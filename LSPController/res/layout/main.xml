@@ -1,0 +1,72 @@
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical"
+  android:focusable="true"
+  android:focusableInTouchMode="true"  >
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal">
+        
+        <TextView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="Server URL:" />
+      
+        <EditText
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:id="@+id/api_base_url"
+          android:inputType="text" />
+
+    </LinearLayout>
+
+    <ScrollView
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1" >
+
+        <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:orientation="vertical" >
+
+            <Button
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:text="ON"
+              android:id="@+id/btn_on_off" />
+            
+            <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:text="Brightness" />
+            
+            <SeekBar
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:max="255"
+              android:id="@+id/sb_brightness" />
+            
+            
+            <LinearLayout
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              android:id="@+id/ll_interrupts" />
+            
+        </LinearLayout>
+
+    </ScrollView>
+    
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/status" />
+    
+</LinearLayout>

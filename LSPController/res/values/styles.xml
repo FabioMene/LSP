@@ -1,0 +1,4 @@
+<?xml version='1.0'?>
+<resources>
+   <style name="Theme.Main" parent="android:style/Theme.Holo"></style>
+</resources>
